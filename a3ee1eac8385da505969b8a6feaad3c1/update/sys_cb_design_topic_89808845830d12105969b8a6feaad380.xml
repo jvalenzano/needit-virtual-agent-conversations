@@ -1,0 +1,1184 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="sys_cb_design_topic">
+    <sys_cb_design_topic action="INSERT_OR_UPDATE">
+        <compiled_topic display_value="_PRVW__e4800481830d121063cdbdb188730f34">41808845830d12105969b8a6feaad309</compiled_topic>
+        <design_definition>{"type":"FlowTopic","triggers":[{"type":"Trigger","name":"9e1106df589f45bcad705da461fa6670","triggerType":"request","applicability":{"type":"Applicability","mode":"script","value":"true"},"id":"9e1106df589f45bcad705da461fa6670"}],"goals":[{"name":"primary","trigger_id":"9e1106df589f45bcad705da461fa6670","nodes":[{"type":"StartGoal","goal_id":"primary","greeting_msg":{"type":"String","mode":"string","value":""},"id":"b1e195a3e13d415eb0fc76856b565b7f","name":"Start","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"TerminateGoal","goal_id":"primary","confirmation_msg":{"type":"String","mode":"string","value":""},"id":"cc752235e35b46948ebd5d1227c21b5c","name":"End","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"ReferenceChoiceInputPrompt","mode":"external","id":"64897e88b2aa4d7b94deccfa742cdf13","name":"My Approvals","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"variable_id":"81becaa1e19f42f8b0674c3bf3dc069f","message":{"type":"String","mode":"string","value":"gs.getMessageLang(\"Here are your outstanding approvals.\", vaContext.getRequesterLang())"},"request_feedback":false,"skippable":{"type":"Applicability","mode":"script","value":"false"},"skipreprompt":{"type":"Applicability","mode":"script","value":"false"},"nlu_entity_binding":{"type":"NLUEntityBinding","allow_text_input":false,"use_confirmation_prompt":true},"expression_mode":"script","script":"(function execute() {\n    var options = JSON.parse(vaVars.results);\n    options.push({ 'value': 'cancel', 'label': gs.getMessageLang(\"I'm done\", vaContext.getRequesterLang()) });\n\n    return options;\n})()","metadataScript":"","cardName":"","cardFields":[],"no_options_found_message":{"type":"String","mode":"string","value":"gs.getMessageLang(\"No records found.\", vaContext.getRequesterLang())"},"condition":{"type":"Condition","mode":"external_script","value":"(function execute() {\n    var options = JSON.parse(vaVars.results);\n    options.push({ 'value': 'cancel', 'label': gs.getMessageLang(\"I'm done\", vaContext.getRequesterLang()) });\n\n    return options;\n})()"},"description":""},{"type":"Decision","name":"Decision","branches":[{"type":"Branch","label":"Approval","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return vaVars.count &gt; 0 &amp;&amp; vaInputs.my_approvals != 'cancel';\n})()"},"id":"0d012c3f5325419cb6a7d273e519921f","name":"Approval","expert_mode":false},{"type":"Branch","label":"Cancel","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return vaVars.count != '0' &amp;&amp; vaInputs.my_approvals == 'cancel';\n})()\n"},"id":"c685f0b1c21d4e7398f3ecdadd769377","name":"Cancel","expert_mode":false}],"id":"223ff56304864d6b9263de80cad62839","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"ScriptOutputPrompt","output_type":"single_part","id":"c41738f288f04c7fb6baf0b647af70fa","name":"Display Task","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"value":{"type":"String","mode":"string","value":"(function execute() {\n\n    var fieldList;\n    var title;\n    var reqItemFields = [];\n    var gr = vaInputs.approval_record;\n    var source_table;\n    var approval_for_record = null;\n    if (!gr.source_table.nil()) {\n        source_table = gr.source_table;\n        approval_for_record = new GlideRecord(gr.source_table);\n        approval_for_record.get(gr.document_id);\n    } else {\n        approval_for_record = new GlideRecord('task');\n        approval_for_record.get(gr.sysapproval);\n        source_table = gr.sysapproval.sys_class_name;\n    }\n\n    if (source_table == 'change_request')\n        fieldList = ['type', 'risk', 'cmdb_ci', 'business_service', 'assignment_group', 'short_description', 'start_date', 'end_date', 'category'];\n\n    else if (source_table == 'sc_request') {\n        fieldList = ['price', 'due_date', 'opened_by'];\n        reqItemFields = getRequestedItems(approval_for_record.getUniqueValue());\n\n    } else if (source_table == 'kb_knowledge')\n        fieldList = ['kb_knowledge_base', 'kb_category', 'short_description', 'valid_to', 'author', 'source'];\n\n    else if (!gs.nil(approval_for_record.short_description))\n        fieldList = ['short_description'];\n\n    title = {\n        url: gs.getProperty('glide.servlet.uri') + '/' +\n            vaVars.portalName +\n            '?id=form' +\n            '&amp;sys_id=' + approval_for_record.getUniqueValue() +\n            '&amp;table=' + source_table,\n        label: approval_for_record.getDisplayValue()\n    };\n\n    var cardRenderer = new global.VaRecordCardRenderer(true);\n    var fields = cardRenderer.createFields(fieldList, approval_for_record);\n    if (source_table == 'sc_request')\n        fields = fields.concat(reqItemFields);\n    var msg = [];\n    var helper = new sn_itsm_va.ItsmVaHelper();\n    msg.push(helper.convertToLinkMarkdown(title.label, title.url));\n    msg.push('\\n\\n');\n    for (i in fields) {\n        var label = fields[i].label;\n        var value = fields[i].value;\n        if (value) {\n            msg.push(helper.convertToBoldMarkdown(label));\n            msg.push(' : ');\n            if (fields[i].url)\n                msg.push(helper.convertToLinkMarkdown(value, fields[i].url));\n            else\n                msg.push(value);\n            msg.push('\\n');\n        }\n    }\n\n    return msg.join('');\n})();\n\nfunction getRequestedItems(document_id) {\n    var reqItemFields = [];\n    var listRenderer = new global.VaRecordCardRenderer(true);\n    var reqItems = new GlideRecord('sc_req_item');\n    reqItems.addQuery('request', document_id);\n    reqItems.query();\n    while (reqItems.next())\n        reqItemFields.push(listRenderer.createStaticField(reqItems.cat_item.getDisplayValue(), reqItems.getElement('quantity').getLabel() + ': ' + reqItems.quantity + ' ' + reqItems.getElement('price').getLabel() + ': ' + reqItems.price));\n    return reqItemFields;\n}"},"secure":false},{"type":"Decision","name":"Decision","branches":[{"type":"Branch","label":"Approve","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return vaInputs.approval_choice == 'approve';\n})()\n"},"id":"7ca8d283567a4d9bb014fa87910a726b","name":"Approve","expert_mode":false},{"type":"Branch","label":"Reject","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return vaInputs.approval_choice == 'reject';\n})()\n"},"id":"a4279574424a48229f5965c991f167ad","name":"Reject","expert_mode":false},{"type":"Branch","label":"Back","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return vaInputs.approval_choice == 'back';\n})()\n"},"id":"de1ecf9c29ff437a8ff4e7ba3ec1ff02","name":"Back","expert_mode":false},{"type":"Branch","label":"Cancel","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return vaInputs.approval_choice == 'cancel';\n})()\n"},"id":"d2633c62d0304595a4793e034c5db4f5","name":"Cancel","expert_mode":false}],"id":"78786783d12a405fa1e9033ebb1c90ca","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"InputPrompt","variable_id":"c235ca90e392420a8b307e1e39350565","message":{"type":"String","mode":"string","value":"gs.getMessageLang(\"Please enter a reason for your rejection.\", vaContext.getRequesterLang())"},"nlu_entity_binding":{"type":"NLUEntityBinding","allow_text_input":false,"use_confirmation_prompt":true},"request_feedback":true,"skippable":{"type":"Applicability","mode":"script","value":"false"},"skipreprompt":{"type":"Applicability","mode":"script","value":"false"},"id":"ff0ba04e65164acbb846be3e5b098a25","name":"Reject Comment","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"formatType":"Text","validationScript":"","description":""},{"type":"TextOutputPrompt","value":[{"type":"String","mode":"string","value":"gs.getMessageLang(\"va:topic:30c8f394dbb01300cde2fd131d9619ff:node:a8c849960ca141219089273b2597af08:field:0\", vaContext.getRequesterLang())"}],"request_feedback":true,"id":"a8c849960ca141219089273b2597af08","name":"Acknowledge Message","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"secure":false},{"type":"ScriptOutputPrompt","output_type":"single_part","id":"9f21a1c90abe4209b313bfc4fca6209b","name":"Approval Message","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"value":{"type":"String","mode":"string","value":"(function execute() {\n    var gr = new GlideRecordSecure('sysapproval_approver');\n    gr.get(vaVars.approval_sysid);\n    var approval_for_record = null;\n    if (!gr.source_table.nil()) {\n        approval_for_record = new GlideRecord(gr.source_table);\n        approval_for_record.get(gr.document_id);\n    } else {\n        approval_for_record = new GlideRecord('task');\n        approval_for_record.get(gr.sysapproval);\n    }\n\n    var baseURL = gs.getProperty('glide.servlet.uri') + '/';\n\n    if (gr.getValue(\"state\") === 'approved')\n        return gs.getMessageLang('{0} was approved.', vaContext.getRequesterLang(), approval_for_record.getDisplayValue());\n    else {\n        var task_url = '&lt;a href=\"' + baseURL + vaVars.portalName + '?id=approval&amp;table=sysapproval_approver&amp;sys_id=' + vaVars.approval_sysid + '\" target=_blank&gt;' + approval_for_record.getDisplayValue() + '&lt;/a&gt;';\n        return gs.getMessageLang('There was a problem approving {0}. Please update the record directly.', vaContext.getRequesterLang(), task_url);\n    }\n\n})()\n"},"secure":false},{"type":"ScriptOutputPrompt","output_type":"single_part","id":"e767ba5461d74873bead03cfda83509a","name":"Rejection Message","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"value":{"type":"String","mode":"string","value":"(function execute() {\n    var gr = new GlideRecordSecure('sysapproval_approver');\n    gr.get(vaVars.approval_sysid);\n    var approval_for_record = null;\n    if (!gr.source_table.nil()) {\n        approval_for_record = new GlideRecord(gr.source_table);\n        approval_for_record.get(gr.document_id);\n    } else {\n        approval_for_record = new GlideRecord('task');\n        approval_for_record.get(gr.sysapproval);\n    }\n\n    var baseURL = gs.getProperty('glide.servlet.uri') + '/';\n\n    if (gr.getValue('state') === 'rejected')\n        return gs.getMessageLang('{0} was rejected.', vaContext.getRequesterLang(), approval_for_record.getDisplayValue());\n    else {\n        var task_url = '&lt;a href=\"' + baseURL + vaVars.portalName + '?id=approval&amp;table=sysapproval_approver&amp;sys_id=' + vaVars.approval_sysid + '\" target=_blank&gt;' + approval_for_record.getDisplayValue() + '&lt;/a&gt;';\n        return gs.getMessageLang('There was a problem rejecting {0}. Please update the record directly.', vaContext.getRequesterLang(), task_url);\n    }\n\n})()\n"},"secure":false},{"type":"ScriptedAction","script":"(function execute() {\n    /*\n     This script finds the requested approvals.\n    */\n    var count = 0;\n    var options = [];\n\n    // find where the user is the delegate.\n    var u = gs.getUserID();\n    var answer = new Array();\n    var i = 0;\n    answer[i++] = new String(u);\n    var g = new GlideRecord(\"sys_user_delegate\");\n    g.addQuery(\"delegate\", u);\n    g.addQuery(\"approvals\", \"true\");\n    g.addQuery(\"starts\", \"&lt;=\", gs.daysAgo(0));\n    g.addQuery(\"ends\", \"&gt;=\", gs.daysAgo(0));\n    g.query();\n    while (g.next())\n        answer[i++] = new String(g.user);\n\n    var gr = new GlideRecordSecure('sysapproval_approver');\n    gr.addQuery('approver', answer);\n    gr.addQuery('state', 'requested');\n    gr.query();\n\n    count = gr.getRowCount();\n    vaVars.count = count;\n    if (count != 0) {\n        while (gr.next()) {\n            var document_record = null;\n            var short_description;\n            if (!gr.source_table.nil()) {\n                document_record = new GlideRecord(gr.source_table);\n                document_record.get(gr.document_id);\n                short_description = document_record.short_description;\n                if (gr.source_table == 'sc_request')\n                    short_description = getReqItems(gr.document_id);\n\n            } else {\n                document_record = new GlideRecord('task');\n                document_record.get(gr.sysapproval);\n                short_description = document_record.short_description;\n                if (document_record.sys_class_name == 'sc_request')\n                    short_description = getReqItems(gr.sysapproval);\n\n            }\n            options.push({\n                'value': gr.getValue('sys_id'),\n                'label': short_description + ' [' + document_record.getDisplayValue() + ']'\n            });\n        }\n        vaVars.results = JSON.stringify(options);\n    }\n\n    function getReqItems(parent_id) {\n        var short_description = [];\n        var reqItems = new GlideRecord('sc_req_item');\n        reqItems.addQuery('request', parent_id);\n        reqItems.query();\n        while (reqItems.next()) {\n            if (!(gs.nil(reqItems.cat_item) || gs.nil(reqItems.cat_item.getDisplayValue())))\n                short_description.push(reqItems.cat_item.getDisplayValue());\n        }\n\n        var sd = short_description.join(', ');\n        return sd.length &lt; 60 ? sd : sd.substr(0, 60) + '...';\n    }\n\n    return '';\n})()\n","id":"7357cd43e9d34db0a292dc4bc7e5fcc7","name":"Find Approvals","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"Decision","name":"Decision","branches":[{"type":"Branch","label":"No Approvals","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return parseInt(vaVars.count) == 0;\n})()\n"},"id":"7e1ec1829e284277859e903f8382eb16","name":"No Approvals","expert_mode":false},{"type":"Branch","label":"Multiple Approvals","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return parseInt(vaVars.count) &gt; 1;\n})()\n"},"id":"200ff5f06e34405c95a12f0de69e5fb5","name":"Multiple Approvals","expert_mode":false},{"type":"Branch","label":"One Approval","expression":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return parseInt(vaVars.count) == 1;\n})()\n"},"id":"b1c64d2032034e1d8772a13ab940bbb1","name":"One Approval","expert_mode":false}],"id":"569dffdb9d3a4a4da20e6f3f17924238","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"TextOutputPrompt","value":[{"type":"String","mode":"string","value":"gs.getMessageLang(\"You have no pending approvals.\", vaContext.getRequesterLang())"}],"request_feedback":true,"id":"7aa5c3c26a02437493b45240d9a5b626","name":"No Approval Message","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"secure":false},{"type":"ScriptedAction","script":"(function execute() {\n    var results = JSON.parse(vaVars.results);\n    vaVars.approval_sysid = results[0].value;\n})()\n","id":"f70f19ec1c6449e0ae4a84545349f678","name":"Set Approval Sys Id","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"ScriptedAction","script":"(function execute() {\n    vaVars.approval_sysid = vaInputs.my_approvals;\n})()\n","id":"7fda102ded6342719c436e9afeccfb95","name":"Set Approval Sys Id","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"TextOutputPrompt","value":[{"type":"String","mode":"script","value":"(function execute() {\n    return gs.getMessageLang('I just checked and you have {0} outstanding approvals', vaContext.getRequesterLang(), vaVars.count);\n})()\n"}],"request_feedback":true,"id":"7dac20c076b248dc8bc9ec7b6f0caff5","name":"Multiple Approval Message","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"(function execute() {\n    return parseInt(vaVars.count) &gt; parseInt(gs.getProperty(\"com.glide.cs.picker_page_limit\", 5));\n})()\n"},"expert_mode":false,"secure":false},{"type":"TextOutputPrompt","value":[{"type":"String","mode":"string","value":"gs.getMessageLang(\"You only have one approval remaining.\", vaContext.getRequesterLang())"}],"request_feedback":true,"id":"e53a048c035f43a5b84ebdab0bc752bc","name":"One Approval Message","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"secure":false},{"type":"CRUDAction","mode":"read","read_mode":"variable","query":"sys_id={{vaVars.approval_sysid}}","variable_id":"06c220e7f68341a381aafa18d2e627ab","id":"1316027e6849455d983f21c1e6fe8c57","name":"Approval Record","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"condition":{"type":"Condition","mode":"glide_query","value":"sys_id={{vaVars.approval_sysid}}"}},{"type":"CRUDAction","mode":"update","query":"state=approved","variable_id":"06c220e7f68341a381aafa18d2e627ab","id":"2639c4f9870d48b8b9a67079c233b1b2","name":"Approve Record","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"attachments":[]},{"type":"CRUDAction","mode":"update","query":"state=rejected^comments={{vaInputs.reject_comment}}","variable_id":"06c220e7f68341a381aafa18d2e627ab","id":"839d729f48df46c7be3d56b9f7a52625","name":"Reject Record","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"attachments":[]},{"type":"ReferenceChoiceInputPrompt","mode":"external","id":"ab28dfabcde14f9cb62111fd5cd8a929","name":"Approval Choice","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"variable_id":"f1920530bb4240b98fe5451aefcfc245","message":{"type":"String","mode":"string","value":"gs.getMessageLang(\"What would you like to do?\", vaContext.getRequesterLang())"},"request_feedback":false,"skippable":{"type":"Applicability","mode":"script","value":"false"},"skipreprompt":{"type":"Applicability","mode":"script","value":"false"},"nlu_entity_binding":{"type":"NLUEntityBinding","allow_text_input":false,"use_confirmation_prompt":true},"expression_mode":"script","script":"(function execute() {\n  var options = [];\n  options.push({ 'value': 'approve', 'label': gs.getMessageLang('Approve', vaContext.getRequesterLang()) });\n  options.push({ 'value': 'reject', 'label': gs.getMessageLang('Reject', vaContext.getRequesterLang()) });\n  if (parseInt(vaVars.count) &gt; 1)\n    options.push({ 'value': 'back', 'label': gs.getMessageLang('Go back to approval list', vaContext.getRequesterLang()) });\n\n  options.push({ 'value': 'cancel', 'label': gs.getMessageLang(\"I'm done\", vaContext.getRequesterLang()) });\n\n  return options;\n})()\n","metadataScript":"","cardName":"","cardFields":[],"no_options_found_message":{"type":"String","mode":"string","value":"gs.getMessageLang(\"No records found.\", vaContext.getRequesterLang())"},"condition":{"type":"Condition","mode":"external_script","value":"(function execute() {\n  var options = [];\n  options.push({ 'value': 'approve', 'label': gs.getMessageLang('Approve', vaContext.getRequesterLang()) });\n  options.push({ 'value': 'reject', 'label': gs.getMessageLang('Reject', vaContext.getRequesterLang()) });\n  if (parseInt(vaVars.count) &gt; 1)\n    options.push({ 'value': 'back', 'label': gs.getMessageLang('Go back to approval list', vaContext.getRequesterLang()) });\n\n  options.push({ 'value': 'cancel', 'label': gs.getMessageLang(\"I'm done\", vaContext.getRequesterLang()) });\n\n  return options;\n})()\n"},"description":""},{"type":"LibraryCall","library_topic_name":"Deflection","library_topic_id":"7fb4ca055303201033cdddeeff7b12b3","library_topic_is_template":false,"parameter-mappings":[{"parameter-name":"deflection_configuration","value":{"type":"String","mode":"string","value":"5292005253213010000dddeeff7b126c"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_configuration"}},{"parameter-name":"deflection_pattern","value":{"type":"String","mode":"string","value":"6eb34c5253213010000dddeeff7b12be"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_pattern"}},{"parameter-name":"activity_table","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}},{"parameter-name":"activity_ids","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}}],"return-value-mappings":[],"id":"ebaaf1873d7b405b8e667efd68f8304f","name":"Deflection: No Approvals","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"LibraryCall","library_topic_name":"Deflection","library_topic_id":"7fb4ca055303201033cdddeeff7b12b3","library_topic_is_template":false,"parameter-mappings":[{"parameter-name":"deflection_configuration","value":{"type":"String","mode":"string","value":"5292005253213010000dddeeff7b126c"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_configuration"}},{"parameter-name":"deflection_pattern","value":{"type":"String","mode":"string","value":"9ee3409253213010000dddeeff7b123b"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_pattern"}},{"parameter-name":"activity_table","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}},{"parameter-name":"activity_ids","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}}],"return-value-mappings":[],"id":"242dbf4c557d40d9854db4d18a3c1418","name":"No Deflection","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"LibraryCall","library_topic_name":"Deflection","library_topic_id":"7fb4ca055303201033cdddeeff7b12b3","library_topic_is_template":false,"parameter-mappings":[{"parameter-name":"deflection_configuration","value":{"type":"String","mode":"string","value":"5292005253213010000dddeeff7b126c"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_configuration"}},{"parameter-name":"deflection_pattern","value":{"type":"String","mode":"string","value":"9ee3409253213010000dddeeff7b123b"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_pattern"}},{"parameter-name":"activity_table","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}},{"parameter-name":"activity_ids","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}}],"return-value-mappings":[],"id":"1a2e3e0cac3446c5a54ca9f72d664c26","name":"No Deflection","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"LibraryCall","library_topic_name":"Deflection","library_topic_id":"7fb4ca055303201033cdddeeff7b12b3","library_topic_is_template":false,"parameter-mappings":[{"parameter-name":"deflection_configuration","value":{"type":"String","mode":"string","value":"5292005253213010000dddeeff7b126c"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_configuration"}},{"parameter-name":"deflection_pattern","value":{"type":"String","mode":"string","value":"0273885253213010000dddeeff7b1210"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_pattern"}},{"parameter-name":"activity_table","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}},{"parameter-name":"activity_ids","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}}],"return-value-mappings":[],"id":"92f7eafe85bd4d248616cb2e7dcb239e","name":"Deflection: Record Approved","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false},{"type":"LibraryCall","library_topic_name":"Deflection","library_topic_id":"7fb4ca055303201033cdddeeff7b12b3","library_topic_is_template":false,"parameter-mappings":[{"parameter-name":"deflection_configuration","value":{"type":"String","mode":"string","value":"5292005253213010000dddeeff7b126c"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_configuration"}},{"parameter-name":"deflection_pattern","value":{"type":"String","mode":"string","value":"0273885253213010000dddeeff7b1210"},"metadata":{"type":"Reference","list":false,"items":[],"use_items":false,"table":"ssa_deflection_pattern"}},{"parameter-name":"activity_table","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}},{"parameter-name":"activity_ids","value":{"type":"String","mode":"string","value":""},"metadata":{"type":"String","list":false,"items":[],"use_items":false}}],"return-value-mappings":[],"id":"1181f12ba08a4e618494c0004cc4b763","name":"Deflection: Record Rejected","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false}],"edges":[{"type":"Edge","source_node_id":"c41738f288f04c7fb6baf0b647af70fa","target_node_id":"ab28dfabcde14f9cb62111fd5cd8a929","id":"0abd99b1408543bd875a6d9698b924bd"},{"type":"Edge","source_node_id":"78786783d12a405fa1e9033ebb1c90ca","target_node_id":"2639c4f9870d48b8b9a67079c233b1b2","branch_id":"7ca8d283567a4d9bb014fa87910a726b","id":"9f2585512fe94977a281f2f8dd95e845","name":"7ca8d283567a4d9bb014fa87910a726b"},{"type":"Edge","source_node_id":"ff0ba04e65164acbb846be3e5b098a25","target_node_id":"839d729f48df46c7be3d56b9f7a52625","id":"13fd720139eb4044952eac547510c7bf"},{"type":"Edge","source_node_id":"64897e88b2aa4d7b94deccfa742cdf13","target_node_id":"223ff56304864d6b9263de80cad62839","id":"0f03e19d68a9429cb49ad00594b12729"},{"type":"Edge","source_node_id":"78786783d12a405fa1e9033ebb1c90ca","target_node_id":"ff0ba04e65164acbb846be3e5b098a25","branch_id":"a4279574424a48229f5965c991f167ad","id":"68edaf4d5ce64e1aaf023a5dd81b143a","name":"a4279574424a48229f5965c991f167ad"},{"type":"Edge","source_node_id":"78786783d12a405fa1e9033ebb1c90ca","target_node_id":"64897e88b2aa4d7b94deccfa742cdf13","branch_id":"de1ecf9c29ff437a8ff4e7ba3ec1ff02","id":"bbaad8c945fe4348b16897303841a096","name":"de1ecf9c29ff437a8ff4e7ba3ec1ff02"},{"type":"Edge","source_node_id":"b1e195a3e13d415eb0fc76856b565b7f","target_node_id":"7357cd43e9d34db0a292dc4bc7e5fcc7","id":"61cd97d649254bdd8be75908ba9144c4"},{"type":"Edge","source_node_id":"7357cd43e9d34db0a292dc4bc7e5fcc7","target_node_id":"569dffdb9d3a4a4da20e6f3f17924238","id":"fe36e39e4f4b44959699b96c0834a2fa"},{"type":"Edge","source_node_id":"569dffdb9d3a4a4da20e6f3f17924238","target_node_id":"7aa5c3c26a02437493b45240d9a5b626","branch_id":"7e1ec1829e284277859e903f8382eb16","id":"0472c1bebb6d46419084c77c7e528df5","name":"7e1ec1829e284277859e903f8382eb16"},{"type":"Edge","source_node_id":"f70f19ec1c6449e0ae4a84545349f678","target_node_id":"a8c849960ca141219089273b2597af08","id":"29bd61c9ef094a07a3c10dd768e5216c"},{"type":"Edge","source_node_id":"223ff56304864d6b9263de80cad62839","target_node_id":"7fda102ded6342719c436e9afeccfb95","branch_id":"0d012c3f5325419cb6a7d273e519921f","id":"12b19453706e454eacda651475fe33bc","name":"0d012c3f5325419cb6a7d273e519921f"},{"type":"Edge","source_node_id":"7fda102ded6342719c436e9afeccfb95","target_node_id":"a8c849960ca141219089273b2597af08","id":"dd74d5817e394da285291ad946d6d5ee"},{"type":"Edge","source_node_id":"569dffdb9d3a4a4da20e6f3f17924238","target_node_id":"7dac20c076b248dc8bc9ec7b6f0caff5","branch_id":"200ff5f06e34405c95a12f0de69e5fb5","id":"8b196befd27d4ed895fe2501f40053b1","name":"200ff5f06e34405c95a12f0de69e5fb5"},{"type":"Edge","source_node_id":"7dac20c076b248dc8bc9ec7b6f0caff5","target_node_id":"64897e88b2aa4d7b94deccfa742cdf13","id":"e2fb27afe63043279489992276c3baa0"},{"type":"Edge","source_node_id":"569dffdb9d3a4a4da20e6f3f17924238","target_node_id":"e53a048c035f43a5b84ebdab0bc752bc","branch_id":"b1c64d2032034e1d8772a13ab940bbb1","id":"5b7111d698874b08a4e1a021fa5d5383","name":"b1c64d2032034e1d8772a13ab940bbb1"},{"type":"Edge","source_node_id":"e53a048c035f43a5b84ebdab0bc752bc","target_node_id":"f70f19ec1c6449e0ae4a84545349f678","id":"705964e5818e42db969abb966ba6b43f"},{"type":"Edge","source_node_id":"a8c849960ca141219089273b2597af08","target_node_id":"1316027e6849455d983f21c1e6fe8c57","id":"c813cf37d02d4e929aec5dc84d4eaf47"},{"type":"Edge","source_node_id":"1316027e6849455d983f21c1e6fe8c57","target_node_id":"c41738f288f04c7fb6baf0b647af70fa","id":"3ffb1d229b8f4a6abc77f25f1fae1514"},{"type":"Edge","source_node_id":"2639c4f9870d48b8b9a67079c233b1b2","target_node_id":"9f21a1c90abe4209b313bfc4fca6209b","id":"b3783eda9e8546398105c50fca4740a7"},{"type":"Edge","source_node_id":"839d729f48df46c7be3d56b9f7a52625","target_node_id":"e767ba5461d74873bead03cfda83509a","id":"933962e20a9d49ae93d1ae2045ece861"},{"type":"Edge","source_node_id":"ab28dfabcde14f9cb62111fd5cd8a929","target_node_id":"78786783d12a405fa1e9033ebb1c90ca","id":"cbbbef2610364c589853751e7945fca0"},{"type":"Edge","source_node_id":"7aa5c3c26a02437493b45240d9a5b626","target_node_id":"ebaaf1873d7b405b8e667efd68f8304f","id":"71903241c2fc45d5a8fb4c68196e1812"},{"type":"Edge","source_node_id":"ebaaf1873d7b405b8e667efd68f8304f","target_node_id":"cc752235e35b46948ebd5d1227c21b5c","id":"afaf353144234c43bdade4b7454ea993"},{"type":"Edge","source_node_id":"223ff56304864d6b9263de80cad62839","target_node_id":"242dbf4c557d40d9854db4d18a3c1418","branch_id":"c685f0b1c21d4e7398f3ecdadd769377","id":"9ecabaf7c9c64641b285a1c548a0a1e2","name":"c685f0b1c21d4e7398f3ecdadd769377"},{"type":"Edge","source_node_id":"242dbf4c557d40d9854db4d18a3c1418","target_node_id":"cc752235e35b46948ebd5d1227c21b5c","id":"a12db00c46b1472fbaa86253099a26df"},{"type":"Edge","source_node_id":"78786783d12a405fa1e9033ebb1c90ca","target_node_id":"1a2e3e0cac3446c5a54ca9f72d664c26","branch_id":"d2633c62d0304595a4793e034c5db4f5","id":"4cc14acf659740c392173c95104b1e4e","name":"d2633c62d0304595a4793e034c5db4f5"},{"type":"Edge","source_node_id":"1a2e3e0cac3446c5a54ca9f72d664c26","target_node_id":"cc752235e35b46948ebd5d1227c21b5c","id":"6eae02d34f1648a495ac523149ac50fd"},{"type":"Edge","source_node_id":"9f21a1c90abe4209b313bfc4fca6209b","target_node_id":"92f7eafe85bd4d248616cb2e7dcb239e","id":"ea4b4010f13d4ea9ae8f345da9454254"},{"type":"Edge","source_node_id":"92f7eafe85bd4d248616cb2e7dcb239e","target_node_id":"cc752235e35b46948ebd5d1227c21b5c","id":"b4bbc9f7e643416b8542a27f11195923"},{"type":"Edge","source_node_id":"e767ba5461d74873bead03cfda83509a","target_node_id":"1181f12ba08a4e618494c0004cc4b763","id":"c841beb97f6e4a2a8b14da08a392d883"},{"type":"Edge","source_node_id":"1181f12ba08a4e618494c0004cc4b763","target_node_id":"cc752235e35b46948ebd5d1227c21b5c","id":"9a858ecc00c24497bd3df0bac15f975c"}],"id":"primary"}],"script_variables":[{"type":"String","name":"LiveAgent_application","value":{"type":"String","mode":"string","value":"itsm"},"list":false,"id":"34b8ff77ee55438aa2a02908f8e25bc5","formatType":"text","secure":false,"sensitive":false,"aiInput":false},{"type":"String","name":"approval_sysid","value":{"type":"String","mode":"string"},"list":false,"id":"47892c36c21a4a0587796cec5eef5e01","formatType":"text","secure":false,"sensitive":false,"aiInput":false},{"type":"String","name":"count","value":{"type":"String","mode":"string","value":"0"},"list":false,"id":"189282866962465b85c280834d559042","formatType":"text","secure":false,"sensitive":false,"aiInput":false},{"type":"String","name":"record_updated","value":{"type":"String","mode":"string"},"list":false,"id":"aa10ca6da172497f8c791807e066afed","formatType":"text","secure":false,"sensitive":false,"aiInput":false},{"type":"String","name":"results","value":{"type":"String","mode":"string"},"list":false,"id":"d973dc74069d4ddfbc52cf6c2bdea92a","formatType":"text","secure":false,"sensitive":false,"aiInput":false},{"type":"String","name":"portalName","value":{"type":"String","mode":"script","value":"(function execute() {\n    if (vaContext.deviceType == 'ios' || vaContext.deviceType == 'android')\n        return 'mesp';\n    return gs.getProperty('sn_itsm_va.com.snc.itsm.virtualagent.portal_url');\n})()\n"},"list":false,"id":"6983c9c9b79a423f845babdcba41756d","formatType":"text","secure":false,"sensitive":false,"aiInput":false}],"glide_variables":[{"type":"Choice","choices":[],"id":"81becaa1e19f42f8b0674c3bf3dc069f","name":"my_approvals","formatType":"text","secure":false,"sensitive":false,"aiInput":false,"list":false,"table":""},{"type":"String","name":"reject_comment","list":false,"id":"c235ca90e392420a8b307e1e39350565","formatType":"Text","validationScript":"","secure":false,"sensitive":false,"aiInput":false},{"type":"Reference","table":"sysapproval_approver","id":"06c220e7f68341a381aafa18d2e627ab","name":"approval_record","formatType":"text","secure":false,"sensitive":false,"aiInput":false,"list":false},{"type":"Reference","table":"sysapproval_approver","id":"514e4ab8ecb74c43bfd241b04a945d88","name":"approve_record","formatType":"text","secure":false,"sensitive":false,"aiInput":false,"list":false},{"type":"Reference","table":"","id":"79e70921f4694daea64c8f0bafa45efe","name":"reject_record","formatType":"text","secure":false,"sensitive":false,"aiInput":false,"list":false},{"type":"Reference","table":"sys_user","id":"current-user","name":"user","formatType":"text","secure":false,"sensitive":false,"aiInput":false,"list":false},{"type":"Choice","choices":[],"id":"f1920530bb4240b98fe5451aefcfc245","name":"approval_choice","formatType":"text","secure":false,"sensitive":false,"aiInput":false,"list":false,"table":""}],"applicability":{"type":"Applicability","mode":"script","value":"true"},"roles":["approver_user"],"scope":"134450a0b3781300787162ac16a8dc1e","domain":"global","topic_type":"STANDARD","channels":[],"dialog_acts_enabled":true,"id":"30c8f394dbb01300cde2fd131d9619ff","name":"_PRVW__e4800481830d121063cdbdb188730f34","key_phrases":["Process Approval (Template)","approve","reject","deny","approval"],"nlu_provider":"","nlu_model":"","nlu_model_label":"","nlu_intent":"","nlu_intent_label":"","flexible_conversation_switching":false,"autopilot_topic":false,"design_categories":[{"name":null,"visible":false,"sysId":"3efd22da0b203300a1b16c2367673a10"}],"triggerable_by_notification":false,"description":"ITSM conversation for processing task approvals.","model_type":"nlu_keyword","foundational":false,"modify_confirmation_enabled":true,"context_profiles":[],"title":"Process Approval (Template)","library":false,"csTopicId":"be638f4e5b34201024f11fc40a81c741","readOnly":true,"nluMapping":"[]"}</design_definition>
+        <design_topic_id>30c8f394dbb01300cde2fd131d9619ff</design_topic_id>
+        <graph>{
+  "graph_api_version": "1.0.46",
+  "goals": {
+    "primary": {
+      "id": "primary",
+      "trigger": {
+        "type": "primary"
+      },
+      "name": "primary",
+      "applicability": "",
+      "description": "ITSM conversation for processing task approvals.",
+      "nodes": {
+        "b1e195a3e13d415eb0fc76856b565b7f": {
+          "id": "b1e195a3e13d415eb0fc76856b565b7f",
+          "stepType": "Start",
+          "name": "Start",
+          "greetingResponse": {
+            "mode": "simple",
+            "value": ""
+          },
+          "isOk": true,
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          }
+        },
+        "cc752235e35b46948ebd5d1227c21b5c": {
+          "id": "cc752235e35b46948ebd5d1227c21b5c",
+          "stepType": "TerminateGoal",
+          "name": "End",
+          "confirmationMessage": {
+            "value": "",
+            "mode": "simple"
+          },
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          }
+        },
+        "64897e88b2aa4d7b94deccfa742cdf13": {
+          "stepType": "ReferenceChoicePrompt",
+          "name": "My Approvals",
+          "prompt": {
+            "value": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": ""
+                  },
+                  {
+                    "text": "Here are your outstanding approvals."
+                  },
+                  {
+                    "text": ""
+                  }
+                ]
+              }
+            ],
+            "mode": "simple"
+          },
+          "confirmMessage": {
+            "value": "",
+            "mode": "simple"
+          },
+          "acknowledgeMsg": {
+            "value": "",
+            "mode": "simple"
+          },
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          },
+          "optional": false,
+          "defaultValue": {
+            "value": "",
+            "mode": "simple"
+          },
+          "variableId": "81becaa1e19f42f8b0674c3bf3dc069f",
+          "id": "64897e88b2aa4d7b94deccfa742cdf13",
+          "mode": "external",
+          "script": "(function execute() {\n    var options = JSON.parse(vaVars.results);\n    options.push({ 'value': 'cancel', 'label': gs.getMessageLang(\"I'm done\", vaContext.getRequesterLang()) });\n\n    return options;\n})()",
+          "noRecordsResponseMsg": {
+            "value": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": ""
+                  },
+                  {
+                    "text": " No records found."
+                  },
+                  {
+                    "text": ""
+                  }
+                ]
+              }
+            ],
+            "mode": "simple"
+          },
+          "isOk": true,
+          "condition": {
+            "value": "(function execute() {\n    var options = JSON.parse(vaVars.results);\n    options.push({ 'value': 'cancel', 'label': gs.getMessageLang(\"I'm done\", vaContext.getRequesterLang()) });\n\n    return options;\n})()",
+            "mode": "external_script"
+          },
+          "withNluUserInput": false,
+          "skipIfFulfilled": false,
+          "entity": {
+            "id": ""
+          },
+          "skippable": {
+            "value": "",
+            "mode": "query"
+          },
+          "cardMetadata": {
+            "mode": "card",
+            "metadataScript": "",
+            "cardTemplate": "",
+            "cardFields": {},
+            "cardDefinition": {}
+          },
+          "hasCardHeader": false,
+          "skipReprompt": {
+            "value": "",
+            "mode": "query"
+          }
+        },
+        "223ff56304864d6b9263de80cad62839": {
+          "id": "223ff56304864d6b9263de80cad62839",
+          "stepType": "Decision",
+          "name": "Decision",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          }
+        },
+        "c41738f288f04c7fb6baf0b647af70fa": {
+          "id": "c41738f288f04c7fb6baf0b647af70fa",
+          "stepType": "ScriptOutput",
+          "name": "Display Task",
+          "script": "(function execute() {\n\n    var fieldList;\n    var title;\n    var reqItemFields = [];\n    var gr = vaInputs.approval_record;\n    var source_table;\n    var approval_for_record = null;\n    if (!gr.source_table.nil()) {\n        source_table = gr.source_table;\n        approval_for_record = new GlideRecord(gr.source_table);\n        approval_for_record.get(gr.document_id);\n    } else {\n        approval_for_record = new GlideRecord('task');\n        approval_for_record.get(gr.sysapproval);\n        source_table = gr.sysapproval.sys_class_name;\n    }\n\n    if (source_table == 'change_request')\n        fieldList = ['type', 'risk', 'cmdb_ci', 'business_service', 'assignment_group', 'short_description', 'start_date', 'end_date', 'category'];\n\n    else if (source_table == 'sc_request') {\n        fieldList = ['price', 'due_date', 'opened_by'];\n        reqItemFields = getRequestedItems(approval_for_record.getUniqueValue());\n\n    } else if (source_table == 'kb_knowledge')\n        fieldList = ['kb_knowledge_base', 'kb_category', 'short_description', 'valid_to', 'author', 'source'];\n\n    else if (!gs.nil(approval_for_record.short_description))\n        fieldList = ['short_description'];\n\n    title = {\n        url: gs.getProperty('glide.servlet.uri') + '/' +\n            vaVars.portalName +\n            '?id=form' +\n            '&amp;sys_id=' + approval_for_record.getUniqueValue() +\n            '&amp;table=' + source_table,\n        label: approval_for_record.getDisplayValue()\n    };\n\n    var cardRenderer = new global.VaRecordCardRenderer(true);\n    var fields = cardRenderer.createFields(fieldList, approval_for_record);\n    if (source_table == 'sc_request')\n        fields = fields.concat(reqItemFields);\n    var msg = [];\n    var helper = new sn_itsm_va.ItsmVaHelper();\n    msg.push(helper.convertToLinkMarkdown(title.label, title.url));\n    msg.push('\\n\\n');\n    for (i in fields) {\n        var label = fields[i].label;\n        var value = fields[i].value;\n        if (value) {\n            msg.push(helper.convertToBoldMarkdown(label));\n            msg.push(' : ');\n            if (fields[i].url)\n                msg.push(helper.convertToLinkMarkdown(value, fields[i].url));\n            else\n                msg.push(value);\n            msg.push('\\n');\n        }\n    }\n\n    return msg.join('');\n})();\n\nfunction getRequestedItems(document_id) {\n    var reqItemFields = [];\n    var listRenderer = new global.VaRecordCardRenderer(true);\n    var reqItems = new GlideRecord('sc_req_item');\n    reqItems.addQuery('request', document_id);\n    reqItems.query();\n    while (reqItems.next())\n        reqItemFields.push(listRenderer.createStaticField(reqItems.cat_item.getDisplayValue(), reqItems.getElement('quantity').getLabel() + ': ' + reqItems.quantity + ' ' + reqItems.getElement('price').getLabel() + ': ' + reqItems.price));\n    return reqItemFields;\n}",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          },
+          "output_type": "single_part",
+          "isOk": true
+        },
+        "78786783d12a405fa1e9033ebb1c90ca": {
+          "id": "78786783d12a405fa1e9033ebb1c90ca",
+          "stepType": "Decision",
+          "name": "Decision",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          }
+        },
+        "ff0ba04e65164acbb846be3e5b098a25": {
+          "id": "ff0ba04e65164acbb846be3e5b098a25",
+          "stepType": "TextPrompt",
+          "name": "Reject Comment",
+          "prompt": {
+            "value": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": ""
+                  },
+                  {
+                    "text": "Please enter a reason for your rejection."
+                  },
+                  {
+                    "text": ""
+                  }
+                ]
+              }
+            ],
+            "mode": "simple"
+          },
+          "confirmMessage": {
+            "value": "",
+            "mode": "simple"
+          },
+          "acknowledgeMsg": {
+            "value": "",
+            "mode": "simple"
+          },
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          },
+          "optional": false,
+          "defaultValue": {
+            "value": "",
+            "mode": "simple"
+          },
+          "variableId": "c235ca90e392420a8b307e1e39350565",
+          "withNluUserInput": false,
+          "skipIfFulfilled": false,
+          "entity": {
+            "id": ""
+          },
+          "skippable": {
+            "value": "",
+            "mode": "query"
+          },
+          "inputType": {
+            "format": "Text",
+            "script": ""
+          },
+          "skipReprompt": {
+            "value": "",
+            "mode": "query"
+          }
+        },
+        "a8c849960ca141219089273b2597af08": {
+          "id": "a8c849960ca141219089273b2597af08",
+          "stepType": "TextOutput",
+          "name": "Acknowledge Message",
+          "value": [
+            {
+              "value": [
+                {
+                  "type": "paragraph",
+                  "children": [
+                    {
+                      "text": ""
+                    },
+                    {
+                      "text": "Here's more information on your approval."
+                    },
+                    {
+                      "text": ""
+                    }
+                  ]
+                }
+              ],
+              "mode": "simple"
+            }
+          ],
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          },
+          "isOk": true,
+          "secure": false
+        },
+        "9f21a1c90abe4209b313bfc4fca6209b": {
+          "id": "9f21a1c90abe4209b313bfc4fca6209b",
+          "stepType": "ScriptOutput",
+          "name": "Approval Message",
+          "script": "(function execute() {\n    var gr = new GlideRecordSecure('sysapproval_approver');\n    gr.get(vaVars.approval_sysid);\n    var approval_for_record = null;\n    if (!gr.source_table.nil()) {\n        approval_for_record = new GlideRecord(gr.source_table);\n        approval_for_record.get(gr.document_id);\n    } else {\n        approval_for_record = new GlideRecord('task');\n        approval_for_record.get(gr.sysapproval);\n    }\n\n    var baseURL = gs.getProperty('glide.servlet.uri') + '/';\n\n    if (gr.getValue(\"state\") === 'approved')\n        return gs.getMessageLang('{0} was approved.', vaContext.getRequesterLang(), approval_for_record.getDisplayValue());\n    else {\n        var task_url = '&lt;a href=\"' + baseURL + vaVars.portalName + '?id=approval&amp;table=sysapproval_approver&amp;sys_id=' + vaVars.approval_sysid + '\" target=_blank&gt;' + approval_for_record.getDisplayValue() + '&lt;/a&gt;';\n        return gs.getMessageLang('There was a problem approving {0}. Please update the record directly.', vaContext.getRequesterLang(), task_url);\n    }\n\n})()\n",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          },
+          "output_type": "single_part",
+          "isOk": true
+        },
+        "e767ba5461d74873bead03cfda83509a": {
+          "id": "e767ba5461d74873bead03cfda83509a",
+          "stepType": "ScriptOutput",
+          "name": "Rejection Message",
+          "script": "(function execute() {\n    var gr = new GlideRecordSecure('sysapproval_approver');\n    gr.get(vaVars.approval_sysid);\n    var approval_for_record = null;\n    if (!gr.source_table.nil()) {\n        approval_for_record = new GlideRecord(gr.source_table);\n        approval_for_record.get(gr.document_id);\n    } else {\n        approval_for_record = new GlideRecord('task');\n        approval_for_record.get(gr.sysapproval);\n    }\n\n    var baseURL = gs.getProperty('glide.servlet.uri') + '/';\n\n    if (gr.getValue('state') === 'rejected')\n        return gs.getMessageLang('{0} was rejected.', vaContext.getRequesterLang(), approval_for_record.getDisplayValue());\n    else {\n        var task_url = '&lt;a href=\"' + baseURL + vaVars.portalName + '?id=approval&amp;table=sysapproval_approver&amp;sys_id=' + vaVars.approval_sysid + '\" target=_blank&gt;' + approval_for_record.getDisplayValue() + '&lt;/a&gt;';\n        return gs.getMessageLang('There was a problem rejecting {0}. Please update the record directly.', vaContext.getRequesterLang(), task_url);\n    }\n\n})()\n",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          },
+          "output_type": "single_part",
+          "isOk": true
+        },
+        "7357cd43e9d34db0a292dc4bc7e5fcc7": {
+          "id": "7357cd43e9d34db0a292dc4bc7e5fcc7",
+          "name": "Find Approvals",
+          "script": "(function execute() {\n    /*\n     This script finds the requested approvals.\n    */\n    var count = 0;\n    var options = [];\n\n    // find where the user is the delegate.\n    var u = gs.getUserID();\n    var answer = new Array();\n    var i = 0;\n    answer[i++] = new String(u);\n    var g = new GlideRecord(\"sys_user_delegate\");\n    g.addQuery(\"delegate\", u);\n    g.addQuery(\"approvals\", \"true\");\n    g.addQuery(\"starts\", \"&lt;=\", gs.daysAgo(0));\n    g.addQuery(\"ends\", \"&gt;=\", gs.daysAgo(0));\n    g.query();\n    while (g.next())\n        answer[i++] = new String(g.user);\n\n    var gr = new GlideRecordSecure('sysapproval_approver');\n    gr.addQuery('approver', answer);\n    gr.addQuery('state', 'requested');\n    gr.query();\n\n    count = gr.getRowCount();\n    vaVars.count = count;\n    if (count != 0) {\n        while (gr.next()) {\n            var document_record = null;\n            var short_description;\n            if (!gr.source_table.nil()) {\n                document_record = new GlideRecord(gr.source_table);\n                document_record.get(gr.document_id);\n                short_description = document_record.short_description;\n                if (gr.source_table == 'sc_request')\n                    short_description = getReqItems(gr.document_id);\n\n            } else {\n                document_record = new GlideRecord('task');\n                document_record.get(gr.sysapproval);\n                short_description = document_record.short_description;\n                if (document_record.sys_class_name == 'sc_request')\n                    short_description = getReqItems(gr.sysapproval);\n\n            }\n            options.push({\n                'value': gr.getValue('sys_id'),\n                'label': short_description + ' [' + document_record.getDisplayValue() + ']'\n            });\n        }\n        vaVars.results = JSON.stringify(options);\n    }\n\n    function getReqItems(parent_id) {\n        var short_description = [];\n        var reqItems = new GlideRecord('sc_req_item');\n        reqItems.addQuery('request', parent_id);\n        reqItems.query();\n        while (reqItems.next()) {\n            if (!(gs.nil(reqItems.cat_item) || gs.nil(reqItems.cat_item.getDisplayValue())))\n                short_description.push(reqItems.cat_item.getDisplayValue());\n        }\n\n        var sd = short_description.join(', ');\n        return sd.length &lt; 60 ? sd : sd.substr(0, 60) + '...';\n    }\n\n    return '';\n})()\n",
+          "stepType": "ScriptAction",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          }
+        },
+        "569dffdb9d3a4a4da20e6f3f17924238": {
+          "id": "569dffdb9d3a4a4da20e6f3f17924238",
+          "stepType": "Decision",
+          "name": "Decision",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          }
+        },
+        "7aa5c3c26a02437493b45240d9a5b626": {
+          "id": "7aa5c3c26a02437493b45240d9a5b626",
+          "stepType": "TextOutput",
+          "name": "No Approval Message",
+          "value": [
+            {
+              "value": [
+                {
+                  "type": "paragraph",
+                  "children": [
+                    {
+                      "text": ""
+                    },
+                    {
+                      "text": "You have no pending approvals."
+                    },
+                    {
+                      "text": ""
+                    }
+                  ]
+                }
+              ],
+              "mode": "simple"
+            }
+          ],
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          },
+          "isOk": true,
+          "secure": false
+        },
+        "f70f19ec1c6449e0ae4a84545349f678": {
+          "id": "f70f19ec1c6449e0ae4a84545349f678",
+          "name": "Set Approval Sys Id",
+          "script": "(function execute() {\n    var results = JSON.parse(vaVars.results);\n    vaVars.approval_sysid = results[0].value;\n})()\n",
+          "stepType": "ScriptAction",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          }
+        },
+        "7fda102ded6342719c436e9afeccfb95": {
+          "id": "7fda102ded6342719c436e9afeccfb95",
+          "name": "Set Approval Sys Id",
+          "script": "(function execute() {\n    vaVars.approval_sysid = vaInputs.my_approvals;\n})()\n",
+          "stepType": "ScriptAction",
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          }
+        },
+        "7dac20c076b248dc8bc9ec7b6f0caff5": {
+          "id": "7dac20c076b248dc8bc9ec7b6f0caff5",
+          "stepType": "TextOutput",
+          "name": "Multiple Approval Message",
+          "value": [
+            {
+              "value": "(function execute() {\n    return gs.getMessageLang('I just checked and you have {0} outstanding approvals', vaContext.getRequesterLang(), vaVars.count);\n})()\n",
+              "mode": "script"
+            }
+          ],
+          "applicability": {
+            "mode": "script",
+            "value": "(function execute() {\n    return parseInt(vaVars.count) &gt; parseInt(gs.getProperty(\"com.glide.cs.picker_page_limit\", 5));\n})()\n"
+          },
+          "secure": false
+        },
+        "e53a048c035f43a5b84ebdab0bc752bc": {
+          "id": "e53a048c035f43a5b84ebdab0bc752bc",
+          "stepType": "TextOutput",
+          "name": "One Approval Message",
+          "value": [
+            {
+              "value": [
+                {
+                  "type": "paragraph",
+                  "children": [
+                    {
+                      "text": ""
+                    },
+                    {
+                      "text": "You only have one approval remaining."
+                    },
+                    {
+                      "text": ""
+                    }
+                  ]
+                }
+              ],
+              "mode": "simple"
+            }
+          ],
+          "applicability": {
+            "mode": "query",
+            "value": ""
+          },
+          "secure": false
+        },
+        "1316027e6849455d983f21c1e6fe8c57": {
+          "id": "1316027e6849455d983f21c1e6fe8c57",
+          "stepType": "LookupRecord",
+          "name": "Approval Record",
+          "condition": {
+            "mode": "glide_query",
+            "value": "sys_id={{vaVars.approval_sysid}}"
+          },
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "variableId": "06c220e7f68341a381aafa18d2e627ab"
+        },
+        "2639c4f9870d48b8b9a67079c233b1b2": {
+          "id": "2639c4f9870d48b8b9a67079c233b1b2",
+          "stepType": "CrudAction",
+          "name": "Approve Record",
+          "template": "state=approved",
+          "mode": "update",
+          "record": "06c220e7f68341a381aafa18d2e627ab",
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "variableId": "514e4ab8ecb74c43bfd241b04a945d88"
+        },
+        "839d729f48df46c7be3d56b9f7a52625": {
+          "id": "839d729f48df46c7be3d56b9f7a52625",
+          "stepType": "CrudAction",
+          "name": "Reject Record",
+          "template": "state=rejected^comments={{vaInputs.reject_comment}}",
+          "mode": "update",
+          "record": "06c220e7f68341a381aafa18d2e627ab",
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "variableId": "79e70921f4694daea64c8f0bafa45efe"
+        },
+        "ab28dfabcde14f9cb62111fd5cd8a929": {
+          "stepType": "ReferenceChoicePrompt",
+          "name": "Approval Choice",
+          "prompt": {
+            "value": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": ""
+                  },
+                  {
+                    "text": "What would you like to do?"
+                  },
+                  {
+                    "text": ""
+                  }
+                ]
+              }
+            ],
+            "mode": "simple"
+          },
+          "confirmMessage": {
+            "value": "",
+            "mode": "simple"
+          },
+          "acknowledgeMsg": {
+            "value": "",
+            "mode": "simple"
+          },
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "skippable": {
+            "value": "",
+            "mode": "query"
+          },
+          "defaultValue": {
+            "value": "",
+            "mode": "simple"
+          },
+          "variableId": "f1920530bb4240b98fe5451aefcfc245",
+          "id": "ab28dfabcde14f9cb62111fd5cd8a929",
+          "mode": "external",
+          "script": "(function execute() {\n  var options = [];\n  options.push({ 'value': 'approve', 'label': gs.getMessageLang('Approve', vaContext.getRequesterLang()) });\n  options.push({ 'value': 'reject', 'label': gs.getMessageLang('Reject', vaContext.getRequesterLang()) });\n  if (parseInt(vaVars.count) &gt; 1)\n    options.push({ 'value': 'back', 'label': gs.getMessageLang('Go back to approval list', vaContext.getRequesterLang()) });\n\n  options.push({ 'value': 'cancel', 'label': gs.getMessageLang(\"I'm done\", vaContext.getRequesterLang()) });\n\n  return options;\n})()\n",
+          "noRecordsResponseMsg": {
+            "value": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": ""
+                  },
+                  {
+                    "text": " No records found."
+                  },
+                  {
+                    "text": ""
+                  }
+                ]
+              }
+            ],
+            "mode": "simple"
+          },
+          "condition": {
+            "value": "(function execute() {\n  var options = [];\n  options.push({ 'value': 'approve', 'label': gs.getMessageLang('Approve', vaContext.getRequesterLang()) });\n  options.push({ 'value': 'reject', 'label': gs.getMessageLang('Reject', vaContext.getRequesterLang()) });\n  if (parseInt(vaVars.count) &gt; 1)\n    options.push({ 'value': 'back', 'label': gs.getMessageLang('Go back to approval list', vaContext.getRequesterLang()) });\n\n  options.push({ 'value': 'cancel', 'label': gs.getMessageLang(\"I'm done\", vaContext.getRequesterLang()) });\n\n  return options;\n})()\n",
+            "mode": "external_script"
+          },
+          "withNluUserInput": false,
+          "skipIfFulfilled": false,
+          "cardMetadata": {
+            "mode": "card",
+            "metadataScript": "",
+            "cardTemplate": "",
+            "cardFields": {},
+            "cardDefinition": {}
+          },
+          "hasCardHeader": false,
+          "skipReprompt": {
+            "value": "",
+            "mode": "query"
+          }
+        },
+        "ebaaf1873d7b405b8e667efd68f8304f": {
+          "id": "ebaaf1873d7b405b8e667efd68f8304f",
+          "stepType": "Component",
+          "name": "Deflection: No Approvals",
+          "fields": [],
+          "reusableTopicId": "7fb4ca055303201033cdddeeff7b12b3",
+          "reusableTopicChoice": "Deflection",
+          "sourceType": "TOPIC_BLOCK",
+          "loading": false,
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "inputs": {
+            "deflection_configuration": {
+              "value": "5292005253213010000dddeeff7b126c",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_configuration"
+            },
+            "deflection_pattern": {
+              "value": "6eb34c5253213010000dddeeff7b12be",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_pattern"
+            },
+            "activity_table": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            },
+            "activity_ids": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            }
+          },
+          "outputs": [],
+          "outdatedNote": false,
+          "variableIds": []
+        },
+        "242dbf4c557d40d9854db4d18a3c1418": {
+          "id": "242dbf4c557d40d9854db4d18a3c1418",
+          "stepType": "Component",
+          "name": "No Deflection",
+          "fields": [],
+          "reusableTopicId": "7fb4ca055303201033cdddeeff7b12b3",
+          "reusableTopicChoice": "Deflection",
+          "sourceType": "TOPIC_BLOCK",
+          "loading": false,
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "inputs": {
+            "deflection_configuration": {
+              "value": "5292005253213010000dddeeff7b126c",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_configuration"
+            },
+            "deflection_pattern": {
+              "value": "9ee3409253213010000dddeeff7b123b",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_pattern"
+            },
+            "activity_table": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            },
+            "activity_ids": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            }
+          },
+          "outputs": [],
+          "outdatedNote": false,
+          "variableIds": []
+        },
+        "1a2e3e0cac3446c5a54ca9f72d664c26": {
+          "id": "1a2e3e0cac3446c5a54ca9f72d664c26",
+          "stepType": "Component",
+          "name": "No Deflection",
+          "fields": [],
+          "reusableTopicId": "7fb4ca055303201033cdddeeff7b12b3",
+          "reusableTopicChoice": "Deflection",
+          "sourceType": "TOPIC_BLOCK",
+          "loading": false,
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "inputs": {
+            "deflection_configuration": {
+              "value": "5292005253213010000dddeeff7b126c",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_configuration"
+            },
+            "deflection_pattern": {
+              "value": "9ee3409253213010000dddeeff7b123b",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_pattern"
+            },
+            "activity_table": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            },
+            "activity_ids": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            }
+          },
+          "outputs": [],
+          "outdatedNote": false,
+          "variableIds": []
+        },
+        "92f7eafe85bd4d248616cb2e7dcb239e": {
+          "id": "92f7eafe85bd4d248616cb2e7dcb239e",
+          "stepType": "Component",
+          "name": "Deflection: Record Approved",
+          "fields": [],
+          "reusableTopicId": "7fb4ca055303201033cdddeeff7b12b3",
+          "reusableTopicChoice": "Deflection",
+          "sourceType": "TOPIC_BLOCK",
+          "loading": false,
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "inputs": {
+            "deflection_configuration": {
+              "value": "5292005253213010000dddeeff7b126c",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_configuration"
+            },
+            "deflection_pattern": {
+              "value": "0273885253213010000dddeeff7b1210",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_pattern"
+            },
+            "activity_table": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            },
+            "activity_ids": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            }
+          },
+          "outputs": [],
+          "outdatedNote": false,
+          "variableIds": []
+        },
+        "1181f12ba08a4e618494c0004cc4b763": {
+          "id": "1181f12ba08a4e618494c0004cc4b763",
+          "stepType": "Component",
+          "name": "Deflection: Record Rejected",
+          "fields": [],
+          "reusableTopicId": "7fb4ca055303201033cdddeeff7b12b3",
+          "reusableTopicChoice": "Deflection",
+          "sourceType": "TOPIC_BLOCK",
+          "loading": false,
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "inputs": {
+            "deflection_configuration": {
+              "value": "5292005253213010000dddeeff7b126c",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_configuration"
+            },
+            "deflection_pattern": {
+              "value": "0273885253213010000dddeeff7b1210",
+              "mode": "string",
+              "type": "Reference",
+              "table": "ssa_deflection_pattern"
+            },
+            "activity_table": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            },
+            "activity_ids": {
+              "value": "",
+              "mode": "simple",
+              "type": "String"
+            }
+          },
+          "outputs": [],
+          "outdatedNote": false,
+          "variableIds": []
+        }
+      },
+      "edges": [
+        {
+          "id": "0abd99b1408543bd875a6d9698b924bd",
+          "edgeType": "Edge",
+          "source": "c41738f288f04c7fb6baf0b647af70fa",
+          "target": "ab28dfabcde14f9cb62111fd5cd8a929",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "9f2585512fe94977a281f2f8dd95e845",
+          "edgeType": "Branch",
+          "source": "78786783d12a405fa1e9033ebb1c90ca",
+          "target": "2639c4f9870d48b8b9a67079c233b1b2",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return vaInputs.approval_choice == 'approve';\n})()\n"
+          },
+          "label": "Approve"
+        },
+        {
+          "id": "13fd720139eb4044952eac547510c7bf",
+          "edgeType": "Edge",
+          "source": "ff0ba04e65164acbb846be3e5b098a25",
+          "target": "839d729f48df46c7be3d56b9f7a52625",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "0f03e19d68a9429cb49ad00594b12729",
+          "edgeType": "Edge",
+          "source": "64897e88b2aa4d7b94deccfa742cdf13",
+          "target": "223ff56304864d6b9263de80cad62839",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "68edaf4d5ce64e1aaf023a5dd81b143a",
+          "edgeType": "Branch",
+          "source": "78786783d12a405fa1e9033ebb1c90ca",
+          "target": "ff0ba04e65164acbb846be3e5b098a25",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return vaInputs.approval_choice == 'reject';\n})()\n"
+          },
+          "label": "Reject"
+        },
+        {
+          "id": "bbaad8c945fe4348b16897303841a096",
+          "edgeType": "Branch",
+          "source": "78786783d12a405fa1e9033ebb1c90ca",
+          "target": "64897e88b2aa4d7b94deccfa742cdf13",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return vaInputs.approval_choice == 'back';\n})()\n"
+          },
+          "label": "Back"
+        },
+        {
+          "id": "61cd97d649254bdd8be75908ba9144c4",
+          "edgeType": "Edge",
+          "source": "b1e195a3e13d415eb0fc76856b565b7f",
+          "target": "7357cd43e9d34db0a292dc4bc7e5fcc7",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "fe36e39e4f4b44959699b96c0834a2fa",
+          "edgeType": "Edge",
+          "source": "7357cd43e9d34db0a292dc4bc7e5fcc7",
+          "target": "569dffdb9d3a4a4da20e6f3f17924238",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "0472c1bebb6d46419084c77c7e528df5",
+          "edgeType": "Branch",
+          "source": "569dffdb9d3a4a4da20e6f3f17924238",
+          "target": "7aa5c3c26a02437493b45240d9a5b626",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return parseInt(vaVars.count) == 0;\n})()\n"
+          },
+          "label": "No Approvals"
+        },
+        {
+          "id": "29bd61c9ef094a07a3c10dd768e5216c",
+          "edgeType": "Edge",
+          "source": "f70f19ec1c6449e0ae4a84545349f678",
+          "target": "a8c849960ca141219089273b2597af08",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "12b19453706e454eacda651475fe33bc",
+          "edgeType": "Branch",
+          "source": "223ff56304864d6b9263de80cad62839",
+          "target": "7fda102ded6342719c436e9afeccfb95",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return vaVars.count &gt; 0 &amp;&amp; vaInputs.my_approvals != 'cancel';\n})()"
+          },
+          "label": "Approval"
+        },
+        {
+          "id": "dd74d5817e394da285291ad946d6d5ee",
+          "edgeType": "Edge",
+          "source": "7fda102ded6342719c436e9afeccfb95",
+          "target": "a8c849960ca141219089273b2597af08",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "8b196befd27d4ed895fe2501f40053b1",
+          "edgeType": "Branch",
+          "source": "569dffdb9d3a4a4da20e6f3f17924238",
+          "target": "7dac20c076b248dc8bc9ec7b6f0caff5",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return parseInt(vaVars.count) &gt; 1;\n})()\n"
+          },
+          "label": "Multiple Approvals"
+        },
+        {
+          "id": "e2fb27afe63043279489992276c3baa0",
+          "edgeType": "Edge",
+          "source": "7dac20c076b248dc8bc9ec7b6f0caff5",
+          "target": "64897e88b2aa4d7b94deccfa742cdf13",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "5b7111d698874b08a4e1a021fa5d5383",
+          "edgeType": "Branch",
+          "source": "569dffdb9d3a4a4da20e6f3f17924238",
+          "target": "e53a048c035f43a5b84ebdab0bc752bc",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return parseInt(vaVars.count) == 1;\n})()\n"
+          },
+          "label": "One Approval"
+        },
+        {
+          "id": "705964e5818e42db969abb966ba6b43f",
+          "edgeType": "Edge",
+          "source": "e53a048c035f43a5b84ebdab0bc752bc",
+          "target": "f70f19ec1c6449e0ae4a84545349f678",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "c813cf37d02d4e929aec5dc84d4eaf47",
+          "edgeType": "Edge",
+          "source": "a8c849960ca141219089273b2597af08",
+          "target": "1316027e6849455d983f21c1e6fe8c57",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "3ffb1d229b8f4a6abc77f25f1fae1514",
+          "edgeType": "Edge",
+          "source": "1316027e6849455d983f21c1e6fe8c57",
+          "target": "c41738f288f04c7fb6baf0b647af70fa",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "b3783eda9e8546398105c50fca4740a7",
+          "edgeType": "Edge",
+          "source": "2639c4f9870d48b8b9a67079c233b1b2",
+          "target": "9f21a1c90abe4209b313bfc4fca6209b",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "933962e20a9d49ae93d1ae2045ece861",
+          "edgeType": "Edge",
+          "source": "839d729f48df46c7be3d56b9f7a52625",
+          "target": "e767ba5461d74873bead03cfda83509a",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "cbbbef2610364c589853751e7945fca0",
+          "edgeType": "Edge",
+          "source": "ab28dfabcde14f9cb62111fd5cd8a929",
+          "target": "78786783d12a405fa1e9033ebb1c90ca",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "71903241c2fc45d5a8fb4c68196e1812",
+          "edgeType": "Edge",
+          "source": "7aa5c3c26a02437493b45240d9a5b626",
+          "target": "ebaaf1873d7b405b8e667efd68f8304f",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "afaf353144234c43bdade4b7454ea993",
+          "edgeType": "Edge",
+          "source": "ebaaf1873d7b405b8e667efd68f8304f",
+          "target": "cc752235e35b46948ebd5d1227c21b5c",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "9ecabaf7c9c64641b285a1c548a0a1e2",
+          "edgeType": "Branch",
+          "source": "223ff56304864d6b9263de80cad62839",
+          "target": "242dbf4c557d40d9854db4d18a3c1418",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return vaVars.count != '0' &amp;&amp; vaInputs.my_approvals == 'cancel';\n})()\n"
+          },
+          "label": "Cancel"
+        },
+        {
+          "id": "a12db00c46b1472fbaa86253099a26df",
+          "edgeType": "Edge",
+          "source": "242dbf4c557d40d9854db4d18a3c1418",
+          "target": "cc752235e35b46948ebd5d1227c21b5c",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "4cc14acf659740c392173c95104b1e4e",
+          "edgeType": "Branch",
+          "source": "78786783d12a405fa1e9033ebb1c90ca",
+          "target": "1a2e3e0cac3446c5a54ca9f72d664c26",
+          "sourcePort": "",
+          "targetPort": "",
+          "expression": {
+            "mode": "script",
+            "value": "(function execute() {\n    return vaInputs.approval_choice == 'cancel';\n})()\n"
+          },
+          "label": "Cancel"
+        },
+        {
+          "id": "6eae02d34f1648a495ac523149ac50fd",
+          "edgeType": "Edge",
+          "source": "1a2e3e0cac3446c5a54ca9f72d664c26",
+          "target": "cc752235e35b46948ebd5d1227c21b5c",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "ea4b4010f13d4ea9ae8f345da9454254",
+          "edgeType": "Edge",
+          "source": "9f21a1c90abe4209b313bfc4fca6209b",
+          "target": "92f7eafe85bd4d248616cb2e7dcb239e",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "b4bbc9f7e643416b8542a27f11195923",
+          "edgeType": "Edge",
+          "source": "92f7eafe85bd4d248616cb2e7dcb239e",
+          "target": "cc752235e35b46948ebd5d1227c21b5c",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "c841beb97f6e4a2a8b14da08a392d883",
+          "edgeType": "Edge",
+          "source": "e767ba5461d74873bead03cfda83509a",
+          "target": "1181f12ba08a4e618494c0004cc4b763",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "9a858ecc00c24497bd3df0bac15f975c",
+          "edgeType": "Edge",
+          "source": "1181f12ba08a4e618494c0004cc4b763",
+          "target": "cc752235e35b46948ebd5d1227c21b5c",
+          "sourcePort": "",
+          "targetPort": ""
+        }
+      ]
+    }
+  },
+  "variables": {
+    "34b8ff77ee55438aa2a02908f8e25bc5": {
+      "id": "34b8ff77ee55438aa2a02908f8e25bc5",
+      "name": "LiveAgent_application",
+      "value": {
+        "mode": "simple",
+        "value": "itsm"
+      },
+      "varType": "script",
+      "label": "LiveAgent_application",
+      "category": "vaVars"
+    },
+    "81becaa1e19f42f8b0674c3bf3dc069f": {
+      "id": "81becaa1e19f42f8b0674c3bf3dc069f",
+      "name": "my_approvals",
+      "label": "My Approvals",
+      "varType": "reference",
+      "table": "",
+      "category": "vaInputs",
+      "nodeId": "64897e88b2aa4d7b94deccfa742cdf13",
+      "isHidden": false
+    },
+    "47892c36c21a4a0587796cec5eef5e01": {
+      "id": "47892c36c21a4a0587796cec5eef5e01",
+      "value": {
+        "value": "",
+        "mode": "simple"
+      },
+      "name": "approval_sysid",
+      "label": "approval_sysid",
+      "varType": "script",
+      "category": "vaVars"
+    },
+    "189282866962465b85c280834d559042": {
+      "id": "189282866962465b85c280834d559042",
+      "value": {
+        "mode": "simple",
+        "value": "0"
+      },
+      "name": "count",
+      "label": "count",
+      "varType": "script",
+      "category": "vaVars"
+    },
+    "aa10ca6da172497f8c791807e066afed": {
+      "id": "aa10ca6da172497f8c791807e066afed",
+      "value": {
+        "value": "",
+        "mode": "simple"
+      },
+      "name": "record_updated",
+      "label": "record_updated",
+      "varType": "script",
+      "category": "vaVars"
+    },
+    "c235ca90e392420a8b307e1e39350565": {
+      "id": "c235ca90e392420a8b307e1e39350565",
+      "name": "reject_comment",
+      "label": "Reject Comment",
+      "varType": "string",
+      "category": "vaInputs",
+      "secure": false,
+      "encryptionSalt": {
+        "value": "MTYyMjEwOTEwNjA4NSBWQSBEZXNpZ25lciBpcyBhd2Vzb21l",
+        "mode": "simple"
+      },
+      "encryptionHashFunction": "SHA-256",
+      "nodeId": "ff0ba04e65164acbb846be3e5b098a25",
+      "isHidden": false
+    },
+    "d973dc74069d4ddfbc52cf6c2bdea92a": {
+      "id": "d973dc74069d4ddfbc52cf6c2bdea92a",
+      "value": {
+        "value": "",
+        "mode": "simple"
+      },
+      "name": "results",
+      "label": "results",
+      "varType": "script",
+      "category": "vaVars"
+    },
+    "06c220e7f68341a381aafa18d2e627ab": {
+      "id": "06c220e7f68341a381aafa18d2e627ab",
+      "name": "approval_record",
+      "label": "Approval Record",
+      "varType": "reference",
+      "table": "sysapproval_approver",
+      "category": "vaInputs",
+      "nodeId": "1316027e6849455d983f21c1e6fe8c57",
+      "isHidden": false
+    },
+    "514e4ab8ecb74c43bfd241b04a945d88": {
+      "id": "514e4ab8ecb74c43bfd241b04a945d88",
+      "name": "approve_record",
+      "label": "Approve Record",
+      "varType": "reference",
+      "table": "sysapproval_approver",
+      "inactive": true,
+      "category": "vaInputs",
+      "nodeId": "2639c4f9870d48b8b9a67079c233b1b2",
+      "isHidden": false
+    },
+    "79e70921f4694daea64c8f0bafa45efe": {
+      "id": "79e70921f4694daea64c8f0bafa45efe",
+      "name": "reject_record",
+      "label": "Reject Record",
+      "varType": "reference",
+      "table": "",
+      "inactive": true,
+      "category": "vaInputs",
+      "nodeId": "839d729f48df46c7be3d56b9f7a52625",
+      "isHidden": false
+    },
+    "current-user": {
+      "category": "vaInputs",
+      "id": "current-user",
+      "label": "User",
+      "name": "user",
+      "table": "sys_user",
+      "varType": "reference"
+    },
+    "f1920530bb4240b98fe5451aefcfc245": {
+      "id": "f1920530bb4240b98fe5451aefcfc245",
+      "name": "approval_choice",
+      "label": "Approval Choice",
+      "varType": "reference",
+      "table": "",
+      "category": "vaInputs",
+      "nodeId": "ab28dfabcde14f9cb62111fd5cd8a929",
+      "isHidden": false
+    },
+    "6983c9c9b79a423f845babdcba41756d": {
+      "id": "6983c9c9b79a423f845babdcba41756d",
+      "value": {
+        "mode": "script",
+        "value": "(function execute() {\n    if (vaContext.deviceType == 'ios' || vaContext.deviceType == 'android')\n        return 'mesp';\n    return gs.getProperty('sn_itsm_va.com.snc.itsm.virtualagent.portal_url');\n})()\n"
+      },
+      "name": "portalName",
+      "label": "portalName",
+      "varType": "script",
+      "category": "vaVars"
+    }
+  }
+}</graph>
+        <name>_PRVW__e4800481830d121063cdbdb188730f34</name>
+        <sys_class_name>sys_cb_design_topic</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-10-02 20:17:47</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_id>89808845830d12105969b8a6feaad380</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>FlowTopic</sys_name>
+        <sys_package display_value="NeedIt Virtual Agent Conversations" source="x_1322731_needit_v">a3ee1eac8385da505969b8a6feaad3c1</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt Virtual Agent Conversations">a3ee1eac8385da505969b8a6feaad3c1</sys_scope>
+        <sys_update_name>sys_cb_design_topic_89808845830d12105969b8a6feaad380</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-10-02 20:17:47</sys_updated_on>
+        <type>FlowTopic</type>
+    </sys_cb_design_topic>
+</record_update>

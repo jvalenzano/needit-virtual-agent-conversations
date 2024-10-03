@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="sys_cb_design_topic">
+    <sys_cb_design_topic action="INSERT_OR_UPDATE">
+        <compiled_topic display_value="_PRVW__9a5788c194cd12104cd2fcee23e1a8d5">925788c183cd12105969b8a6feaad3dd</compiled_topic>
+        <design_definition>{"type":"FlowTopic","triggers":[{"type":"Trigger","name":"41b95d2b47c64fe992c28288b5fcf143","triggerType":"request","applicability":{"type":"Applicability","mode":"script","value":"true"},"id":"41b95d2b47c64fe992c28288b5fcf143"}],"goals":[{"name":"primary","trigger_id":"41b95d2b47c64fe992c28288b5fcf143","nodes":[{"type":"StartGoal","goal_id":"primary","greeting_msg":{"type":"String","mode":"string","value":"gs.getMessageLang(\"Hello nerds\", vaContext.getRequesterLang())"},"id":"6129d67cc15f4bd7a0b269f2dfbab939","name":"Start","expert_mode":false},{"type":"TerminateGoal","goal_id":"primary","confirmation_msg":{"type":"String","mode":"string","value":""},"id":"67d1b195b82141878406ec1875ab6a55","name":"End","expert_mode":false},{"type":"ChoiceInputPrompt","expression_mode":"simple","metadataScript":"","cardName":"Small image with text","cardFields":[{"name":"title","value":{"type":"String","mode":"string","value":"gs.getMessageLang(\"Welcome to Scout!\", vaContext.getRequesterLang())"},"required":true},{"name":"description","value":{"type":"String","mode":"string","value":"gs.getMessageLang(\"I am your personal navigator.\", vaContext.getRequesterLang())"},"required":false},{"name":"image","value":{"type":"String","mode":"script","value":"(function execute() { var url = gs.getProperty(\"glide.servlet.uri\"); return url + \"CSL_v4_1200x1200_ImageOnlyjpg_1727901973124.jpg\";})()"},"required":true},{"name":"imageAlt","value":{"type":"String","mode":"string","value":""},"required":false}],"id":"0ff82c02de2b4d7fb0ea1fa34704784c","name":"NeedIt Type","goal_id":"primary","applicability":{"type":"Applicability","mode":"script","value":"true"},"expert_mode":false,"variable_id":"f740637135944438b4afd643818b0c38","message":{"type":"String","mode":"string","value":"gs.getMessageLang(\"Which type of NeedIt record would you like to view?\", vaContext.getRequesterLang())"},"request_feedback":false,"skippable":{"type":"Applicability","mode":"script","value":"false"},"skipreprompt":{"type":"Applicability","mode":"script","value":"false"},"nlu_entity_binding":{"type":"NLUEntityBinding","allow_text_input":false,"use_confirmation_prompt":true},"description":""}],"edges":[{"type":"Edge","source_node_id":"6129d67cc15f4bd7a0b269f2dfbab939","target_node_id":"0ff82c02de2b4d7fb0ea1fa34704784c","id":"5ffd03be5f7c4f15a4d27e9f926eabcc"},{"type":"Edge","source_node_id":"0ff82c02de2b4d7fb0ea1fa34704784c","target_node_id":"67d1b195b82141878406ec1875ab6a55","id":"6af1d1e51be84bb397b9f96e64e263c0"}],"id":"primary"}],"script_variables":[{"type":"String","name":"LiveAgent_application","value":{"type":"String","mode":"string"},"list":false,"id":"9f7644ea1280430983e8735a79beeca6","formatType":"text","secure":false,"sensitive":false,"aiInput":false}],"glide_variables":[{"type":"Reference","table":"sys_user","id":"current-user","name":"user","formatType":"text","secure":false,"sensitive":false,"aiInput":false,"list":false},{"type":"Choice","choices":[{"name":"Legal","element":"legal"},{"name":"Facilities","element":"facilities"},{"name":"Human Resources","element":"human resources"}],"id":"f740637135944438b4afd643818b0c38","name":"needit_type","formatType":"text","secure":false,"sensitive":false,"aiInput":false,"list":false,"label":"NeedIt Type"}],"applicability":{"type":"Applicability","mode":"script","value":"true"},"roles":[],"scope":"a3ee1eac8385da505969b8a6feaad3c1","domain":"global","topic_type":"STANDARD","channels":[],"dialog_acts_enabled":true,"id":"fc91aa608309da505969b8a6feaad34e","name":"_PRVW__9a5788c194cd12104cd2fcee23e1a8d5","key_phrases":["View Open NeedIt Records","NeedIt Request","need something","approval","process"],"nlu_provider":"","nlu_model":"","nlu_model_label":"","nlu_intent":"","nlu_intent_label":"","flexible_conversation_switching":false,"autopilot_topic":false,"design_categories":[{"name":null,"visible":false,"sysId":"3acfda2483c5da505969b8a6feaad363"}],"triggerable_by_notification":false,"description":"Topic allows users to view their open NeedIt records","model_type":"nlu_keyword","foundational":false,"modify_confirmation_enabled":true,"context_profiles":[],"title":"View Open NeedIt Records","library":false,"csTopicId":"c09388cd830d12105969b8a6feaad375","readOnly":false,"nluMapping":"[]"}</design_definition>
+        <design_topic_id>fc91aa608309da505969b8a6feaad34e</design_topic_id>
+        <graph>{
+  "graph_api_version": "1.0.66",
+  "goals": {
+    "primary": {
+      "id": "primary",
+      "trigger": {
+        "type": "primary"
+      },
+      "name": "primary",
+      "applicability": "",
+      "description": "",
+      "nodes": {
+        "6129d67cc15f4bd7a0b269f2dfbab939": {
+          "id": "6129d67cc15f4bd7a0b269f2dfbab939",
+          "stepType": "Start",
+          "name": "Start",
+          "greetingResponse": {
+            "value": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "Hello nerds"
+                  }
+                ]
+              }
+            ],
+            "mode": "simple"
+          }
+        },
+        "67d1b195b82141878406ec1875ab6a55": {
+          "id": "67d1b195b82141878406ec1875ab6a55",
+          "stepType": "TerminateGoal",
+          "name": "End",
+          "confirmationMessage": {
+            "mode": "simple",
+            "value": ""
+          }
+        },
+        "0ff82c02de2b4d7fb0ea1fa34704784c": {
+          "name": "NeedIt Type",
+          "prompt": {
+            "value": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "Which type of NeedIt record would you like to view?"
+                  }
+                ]
+              }
+            ],
+            "mode": "simple"
+          },
+          "confirmMessage": {
+            "value": "",
+            "mode": "simple"
+          },
+          "acknowledgeMsg": {
+            "value": "",
+            "mode": "simple"
+          },
+          "applicability": {
+            "value": "",
+            "mode": "query"
+          },
+          "skippable": {
+            "value": "",
+            "mode": "query"
+          },
+          "skipReprompt": {
+            "value": "",
+            "mode": "query"
+          },
+          "defaultValue": {
+            "value": "",
+            "mode": "simple"
+          },
+          "variableId": "f740637135944438b4afd643818b0c38",
+          "detailDescription": "",
+          "id": "0ff82c02de2b4d7fb0ea1fa34704784c",
+          "stepType": "ChoicePrompt",
+          "hasCardHeader": true,
+          "cardMetadata": {
+            "mode": "card",
+            "metadataScript": "",
+            "cardTemplate": "Small image with text",
+            "cardFields": {
+              "1cf75c317313101081e06502edf6a738_title": {
+                "value": [
+                  {
+                    "type": "paragraph",
+                    "children": [
+                      {
+                        "text": "Welcome to Scout!"
+                      }
+                    ]
+                  }
+                ],
+                "mode": "simple"
+              },
+              "1cf75c317313101081e06502edf6a738_image": {
+                "value": "CSL_v4_1200x1200_ImageOnlyjpg_1727901973124.jpg",
+                "mode": "db_image"
+              },
+              "1cf75c317313101081e06502edf6a738_description": {
+                "value": [
+                  {
+                    "type": "paragraph",
+                    "children": [
+                      {
+                        "text": "I am your personal navigator."
+                      }
+                    ]
+                  }
+                ],
+                "mode": "simple"
+              }
+            },
+            "cardDefinition": {
+              "sys_id": "1cf75c317313101081e06502edf6a738",
+              "name": "Small image with text",
+              "sys_name": "Small image with text",
+              "thumbnail.name": "Small image with text.svg",
+              "fields": [
+                {
+                  "label": "Title",
+                  "position": "1",
+                  "mandatory": true,
+                  "name": "title",
+                  "id": "1cf75c317313101081e06502edf6a738_title"
+                },
+                {
+                  "label": "Description",
+                  "position": "2",
+                  "mandatory": false,
+                  "name": "description",
+                  "id": "1cf75c317313101081e06502edf6a738_description"
+                },
+                {
+                  "label": "Image URL link",
+                  "position": "3",
+                  "mandatory": true,
+                  "type": "image",
+                  "name": "image",
+                  "id": "1cf75c317313101081e06502edf6a738_image"
+                },
+                {
+                  "label": "Image alt text",
+                  "position": "4",
+                  "mandatory": false,
+                  "name": "imageAlt",
+                  "id": "1cf75c317313101081e06502edf6a738_imageAlt"
+                }
+              ],
+              "value": "Small image with text",
+              "hasTemplateError": false
+            }
+          },
+          "withNluUserInput": false,
+          "skipIfFulfilled": false
+        }
+      },
+      "edges": [
+        {
+          "id": "5ffd03be5f7c4f15a4d27e9f926eabcc",
+          "edgeType": "Edge",
+          "source": "6129d67cc15f4bd7a0b269f2dfbab939",
+          "target": "0ff82c02de2b4d7fb0ea1fa34704784c",
+          "sourcePort": "",
+          "targetPort": ""
+        },
+        {
+          "id": "6af1d1e51be84bb397b9f96e64e263c0",
+          "edgeType": "Edge",
+          "source": "0ff82c02de2b4d7fb0ea1fa34704784c",
+          "target": "67d1b195b82141878406ec1875ab6a55",
+          "sourcePort": "",
+          "targetPort": ""
+        }
+      ]
+    }
+  },
+  "variables": {
+    "9f7644ea1280430983e8735a79beeca6": {
+      "id": "9f7644ea1280430983e8735a79beeca6",
+      "name": "LiveAgent_application",
+      "value": {
+        "mode": "simple",
+        "value": null
+      },
+      "varType": "script",
+      "category": "vaVars"
+    },
+    "current-user": {
+      "category": "vaInputs",
+      "id": "current-user",
+      "label": "User",
+      "name": "user",
+      "table": "sys_user",
+      "varType": "reference"
+    },
+    "f740637135944438b4afd643818b0c38": {
+      "id": "f740637135944438b4afd643818b0c38",
+      "name": "needit_type",
+      "label": "NeedIt Type",
+      "varType": "choice",
+      "choices": [
+        {
+          "label": "Legal",
+          "value": "legal"
+        },
+        {
+          "label": "Facilities",
+          "value": "facilities",
+          "checked": true,
+          "meta": {}
+        },
+        {
+          "label": "Human Resources",
+          "value": "human resources",
+          "checked": true,
+          "meta": {}
+        }
+      ],
+      "category": "vaInputs",
+      "nodeId": "0ff82c02de2b4d7fb0ea1fa34704784c",
+      "isHidden": false
+    }
+  }
+}</graph>
+        <name>_PRVW__9a5788c194cd12104cd2fcee23e1a8d5</name>
+        <sys_class_name>sys_cb_design_topic</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-10-02 20:47:39</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_id>1657408583cd12105969b8a6feaad304</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>FlowTopic</sys_name>
+        <sys_package display_value="NeedIt Virtual Agent Conversations" source="x_1322731_needit_v">a3ee1eac8385da505969b8a6feaad3c1</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt Virtual Agent Conversations">a3ee1eac8385da505969b8a6feaad3c1</sys_scope>
+        <sys_update_name>sys_cb_design_topic_1657408583cd12105969b8a6feaad304</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-10-02 20:47:39</sys_updated_on>
+        <type>FlowTopic</type>
+    </sys_cb_design_topic>
+</record_update>
